@@ -44,3 +44,8 @@ button.submit-button {
     background-color: var(--color-primary);
     color: #fff;
 }
+
+/* Utils */
+.d-inline {
+    display: inline-block;
+}
