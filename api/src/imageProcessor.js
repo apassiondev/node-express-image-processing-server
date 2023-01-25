@@ -1,27 +1,22 @@
 const path = require("path");
 const { Worker, isMainThread } = require("worker_threads");
 
-// Path to the resize/monochrome worker
 const pathToResizeWorker = path.resolve(__dirname, "resizeWorker.js");
 const pathToMonochromeWorker = path.resolve(__dirname, "monochromeWorker.js");
 
-// Create the upload path resolver function
-function uploadPathResolver(filename) {
+const uploadPathResolver = (filename) => {
   return path.resolve(__dirname, "../uploads", filename);
-}
+};
 
-// Create the image processor
-function imageProcessor(filename) {
+const imageProcessor = (filename) => {
   const sourcePath = uploadPathResolver(filename);
   const resizedDestination = uploadPathResolver(`resized-${filename}`);
   const monochromeDestination = uploadPathResolver(`monochrome-${filename}`);
-
   let resizeWorkerFinished = false;
   let monochromeWorkerFinished = false;
 
   return new Promise((resolve, reject) => {
     if (isMainThread) {
-      // Instantiate the resizeWorker
       try {
         const resizeWorker = new Worker(pathToResizeWorker, {
           workerData: {
@@ -49,7 +44,9 @@ function imageProcessor(filename) {
         });
 
         resizeWorker.on("exit", (code) => {
-          reject(new Error(`Exited with status code ${code}`));
+          if (code !== 0) {
+            reject(new Error(`Exited with status code ${code}`));
+          }
         });
 
         monochromeWorker.on("message", (message) => {
@@ -58,6 +55,7 @@ function imageProcessor(filename) {
             resolve("monochromeWorker finished processing");
           }
         });
+
         monochromeWorker.on("error", (error) => {
           reject(new Error(error.message));
         });
@@ -73,6 +71,6 @@ function imageProcessor(filename) {
       reject(new Error("not on main thread"));
     }
   });
-}
+};
 
 module.exports = imageProcessor;

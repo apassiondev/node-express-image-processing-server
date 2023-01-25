@@ -10,10 +10,15 @@ const filename = (request, file, callback) => {
   callback(null, file.originalname);
 };
 
+// Configure Multer disk storage
+const storage = multer.diskStorage({
+  filename,
+  destination: "api/uploads/",
+});
+
 // Create the MIME type file filter
 const fileFilter = (request, file, callback) => {
-  const { mimetype } = file;
-  if (mimetype !== "image/png") {
+  if (file.mimetype !== "image/png") {
     const errorMessage = "Wrong file type";
     request.fileValidatorError = errorMessage;
     callback(null, false, new Error(errorMessage));
@@ -21,12 +26,6 @@ const fileFilter = (request, file, callback) => {
     callback(null, true);
   }
 };
-
-// Configure Multer disk storage
-const storage = multer.diskStorage({
-  filename,
-  destination: "api/uploads/",
-});
 
 // Define the upload callback
 const upload = multer({
@@ -45,13 +44,15 @@ router.post("/upload", upload.single("photo"), async (request, response) => {
 
   try {
     await imageProcessor(request.file.filename);
-    // Success
-    response.status(201).json({
-      success: true,
-    });
   } catch (error) {
-    throw new Error(error.message);
+    // throw new Error(error.message);
+    return console.error(error);
   }
+
+  // Success
+  response.status(201).json({
+    success: true,
+  });
 });
 
 // Resolve the path to the photo viewer
